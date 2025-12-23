@@ -3,57 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rich Text PKM - Pro</title>
+    <title>Rich Text PKM - Collapsible</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=EB+Garamond:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
             --primary: #2563eb; --bg: #ffffff; --sidebar: #f8fafc; 
             --border: #e2e8f0; --text: #1e293b; --item-hover: #f1f5f9;
+            --drag-over: #dbeafe;
         }
         [data-theme="dark"] {
             --primary: #3b82f6; --bg: #0f172a; --sidebar: #1e293b; 
             --border: #334155; --text: #f1f5f9; --item-hover: #334155;
+            --drag-over: #1e293b;
         }
         body { font-family: 'DM Sans', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
         
-        /* Sidebar */
         #sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
         #search-input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-top: 10px; background: var(--bg); color: var(--text); box-sizing: border-box; }
+        
         #note-list { flex: 1; overflow-y: auto; padding: 10px 0; }
         
-        .folder-group { margin-bottom: 15px; }
+        /* Collapsible Styling */
+        .folder-group { margin-bottom: 5px; }
         .folder-header { 
-            padding: 8px 20px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; 
+            padding: 10px 20px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; 
             color: #64748b; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; user-select: none;
         }
-        .folder-actions { display: none; gap: 5px; cursor: pointer; }
+        .folder-header:hover { background: var(--item-hover); }
+        .folder-toggle-icon { transition: transform 0.2s; display: inline-block; margin-right: 8px; font-size: 10px; }
+        .folder-group.collapsed .folder-toggle-icon { transform: rotate(-90deg); }
+        .folder-group.collapsed .note-items-container { display: none; }
+        
+        .folder-actions { display: none; gap: 8px; cursor: pointer; }
         .folder-header:hover .folder-actions { display: flex; }
         
-        .note-item { padding: 10px 20px 10px 35px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; border-left: 4px solid transparent; }
+        .note-item { padding: 8px 20px 8px 42px; cursor: grab; font-size: 0.9rem; transition: 0.2s; border-left: 4px solid transparent; }
         .note-item:hover { background: var(--item-hover); }
         .note-item.active { background: var(--item-hover); border-left: 4px solid var(--primary); font-weight: bold; }
 
-        /* Main Editor */
         #main { flex: 1; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
         #editor-container { width: 100%; max-width: 800px; padding: 40px 20px; display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box; }
-        
         #note-title { font-size: 2.5rem; font-weight: bold; border: none; outline: none; background: transparent; color: var(--text); width: 100%; }
-        .metadata { margin-bottom: 20px; display: flex; gap: 15px; font-size: 0.8rem; opacity: 0.8; }
+        .metadata { margin-bottom: 20px; display: flex; gap: 15px; font-size: 0.8rem; opacity: 0.8; align-items: center;}
 
-        /* Toolbar */
         .toolbar { 
             display: flex; gap: 8px; margin-bottom: 20px; align-items: center; 
             flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); 
             z-index: 10; padding: 10px 0; border-bottom: 1px solid var(--border); 
         }
         #editor { flex: 1; min-height: 400px; outline: none; line-height: 1.6; }
-
-        /* Checkbox & List Items */
         .todo-item { display: flex; align-items: flex-start; gap: 10px; margin: 5px 0; }
-        .todo-item input { margin-top: 6px; transform: scale(1.2); }
 
-        /* Helpers */
         .font-garamond { font-family: 'EB Garamond', serif; }
         .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
         .size-small { font-size: 14px; }
@@ -67,11 +69,11 @@
 <div id="sidebar">
     <div class="sidebar-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <b style="letter-spacing: 1px;">MY PKM</b>
+            <b style="letter-spacing: 1px;">STORY BIBLE</b>
             <button onclick="toggleTheme()">🌓</button>
         </div>
         <input type="text" id="search-input" placeholder="Search notes..." oninput="renderList()">
-        <button onclick="newNote()" style="width: 100%; margin-top: 10px; font-weight: bold; background: var(--primary); color: white; border: none;">+ New Note</button>
+        <button onclick="newNote()" style="width: 100%; margin-top: 10px; font-weight: bold; background: var(--primary); color: white; border: none; padding: 10px;">+ New Note</button>
         <button onclick="addFolder()" style="width: 100%; margin-top: 5px; font-size: 0.7rem;">+ Add Folder</button>
     </div>
     <div id="note-list"></div>
@@ -99,7 +101,7 @@
             <button onclick="exec('italic')"><i>I</i></button>
             <button onclick="insertCheckbox()">☑ Task</button>
             <button onclick="exec('insertUnorderedList')">• List</button>
-            <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto;">Delete</button>
+            <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto; border:none; background:none;">Delete</button>
         </div>
 
         <div id="editor" contenteditable="true"></div>
@@ -107,8 +109,9 @@
 </div>
 
 <script>
-    let notes = JSON.parse(localStorage.getItem('pkm_v3_notes')) || [];
-    let folders = JSON.parse(localStorage.getItem('pkm_v3_folders')) || ["General", "Characters", "Plot"];
+    let notes = JSON.parse(localStorage.getItem('pkm_v5_notes')) || [];
+    let folders = JSON.parse(localStorage.getItem('pkm_v5_folders')) || ["General", "Characters", "Settings"];
+    let collapsedFolders = JSON.parse(localStorage.getItem('pkm_v5_collapsed')) || [];
     let currentId = null;
 
     function exec(command) {
@@ -117,8 +120,7 @@
     }
 
     function insertCheckbox() {
-        const id = 'check-' + Date.now();
-        const html = `<div class="todo-item" contenteditable="false"><input type="checkbox" id="${id}" onchange="this.toggleAttribute('checked')"> <span contenteditable="true" style="outline:none">New task...</span></div>`;
+        const html = `<div class="todo-item" contenteditable="false"><input type="checkbox" onchange="this.toggleAttribute('checked')"> <span contenteditable="true" style="outline:none">New task...</span></div>`;
         document.execCommand('insertHTML', false, html);
         save();
     }
@@ -126,50 +128,27 @@
     function save() {
         if (!currentId) return;
         const note = notes.find(n => n.id === currentId);
-        note.title = document.getElementById('note-title').value || 'Untitled';
-        note.folder = document.getElementById('note-folder').value;
-        note.content = document.getElementById('editor').innerHTML;
-        note.font = document.getElementById('font-family').value;
-        note.size = document.getElementById('font-size').value;
-        note.updated = Date.now();
-        
-        localStorage.setItem('pkm_v3_notes', JSON.stringify(notes));
-        localStorage.setItem('pkm_v3_folders', JSON.stringify(folders));
+        if (note) {
+            note.title = document.getElementById('note-title').value || 'Untitled';
+            note.folder = document.getElementById('note-folder').value;
+            note.content = document.getElementById('editor').innerHTML;
+            note.font = document.getElementById('font-family').value;
+            note.size = document.getElementById('font-size').value;
+            note.updated = Date.now();
+        }
+        localStorage.setItem('pkm_v5_notes', JSON.stringify(notes));
+        localStorage.setItem('pkm_v5_folders', JSON.stringify(folders));
         renderList();
     }
 
-    function addFolder() {
-        const name = prompt("New folder name:");
-        if (name && !folders.includes(name)) {
-            folders.push(name);
-            save();
-            renderFolderOptions();
+    function toggleFolder(folder) {
+        if (collapsedFolders.includes(folder)) {
+            collapsedFolders = collapsedFolders.filter(f => f !== folder);
+        } else {
+            collapsedFolders.push(folder);
         }
-    }
-
-    function renameFolder(oldName) {
-        const newName = prompt(`Rename "${oldName}" to:`, oldName);
-        if (newName && newName !== oldName) {
-            folders = folders.map(f => f === oldName ? newName : f);
-            notes.forEach(n => { if(n.folder === oldName) n.folder = newName; });
-            save();
-            renderFolderOptions();
-        }
-    }
-
-    function deleteFolder(name) {
-        if (confirm(`Delete folder "${name}"? Notes will move to General.`)) {
-            folders = folders.filter(f => f !== name);
-            notes.forEach(n => { if(n.folder === name) n.folder = "General"; });
-            if (!folders.includes("General")) folders.push("General");
-            save();
-            renderFolderOptions();
-        }
-    }
-
-    function renderFolderOptions() {
-        const select = document.getElementById('note-folder');
-        select.innerHTML = folders.map(f => `<option value="${f}">${f}</option>`).join('');
+        localStorage.setItem('pkm_v5_collapsed', JSON.stringify(collapsedFolders));
+        renderList();
     }
 
     function renderList() {
@@ -179,28 +158,74 @@
 
         folders.forEach(folder => {
             const folderNotes = notes.filter(n => n.folder === folder && n.title.toLowerCase().includes(searchTerm));
-            if (folderNotes.length === 0 && searchTerm) return;
+            const isCollapsed = collapsedFolders.includes(folder);
 
             const group = document.createElement('div');
-            group.className = 'folder-group';
-            group.innerHTML = `
-                <div class="folder-header">
-                    <span>${folder}</span>
-                    <div class="folder-actions">
-                        <span onclick="renameFolder('${folder}')">✎</span>
-                        <span onclick="deleteFolder('${folder}')">🗑</span>
-                    </div>
-                </div>`;
+            group.className = `folder-group ${isCollapsed ? 'collapsed' : ''}`;
             
+            // Drag and drop handlers
+            group.ondragover = (e) => { e.preventDefault(); group.style.background = 'var(--drag-over)'; };
+            group.ondragleave = (e) => { group.style.background = ''; };
+            group.ondrop = (e) => {
+                e.preventDefault();
+                group.style.background = '';
+                const noteId = parseInt(e.dataTransfer.getData('text/plain'));
+                const note = notes.find(n => n.id === noteId);
+                if (note) { note.folder = folder; save(); }
+            };
+
+            group.innerHTML = `
+                <div class="folder-header" onclick="toggleFolder('${folder}')">
+                    <span><span class="folder-toggle-icon">▼</span>${folder} (${folderNotes.length})</span>
+                    <div class="folder-actions">
+                        <span onclick="event.stopPropagation(); renameFolder('${folder}')">✎</span>
+                        <span onclick="event.stopPropagation(); deleteFolder('${folder}')">🗑</span>
+                    </div>
+                </div>
+                <div class="note-items-container"></div>`;
+            
+            const container = group.querySelector('.note-items-container');
             folderNotes.sort((a,b) => b.updated - a.updated).forEach(n => {
                 const div = document.createElement('div');
                 div.className = `note-item ${n.id === currentId ? 'active' : ''}`;
-                div.textContent = n.title;
-                div.onclick = () => loadNote(n.id);
-                group.appendChild(div);
+                div.textContent = n.title || 'Untitled';
+                div.draggable = true;
+                div.ondragstart = (e) => { e.dataTransfer.setData('text/plain', n.id); e.target.style.opacity = '0.5'; };
+                div.ondragend = (e) => { e.target.style.opacity = '1'; };
+                div.onclick = (e) => { e.stopPropagation(); loadNote(n.id); };
+                container.appendChild(div);
             });
             list.appendChild(group);
         });
+    }
+
+    // Folder/Note Management Helpers
+    function addFolder() {
+        const name = prompt("New folder name:");
+        if (name && !folders.includes(name)) { folders.push(name); save(); renderFolderOptions(); }
+    }
+
+    function renameFolder(oldName) {
+        const newName = prompt(`Rename "${oldName}" to:`, oldName);
+        if (newName && newName !== oldName) {
+            folders = folders.map(f => f === oldName ? newName : f);
+            notes.forEach(n => { if(n.folder === oldName) n.folder = newName; });
+            save(); renderFolderOptions();
+        }
+    }
+
+    function deleteFolder(name) {
+        if (confirm(`Delete folder "${name}"? Notes move to General.`)) {
+            folders = folders.filter(f => f !== name);
+            notes.forEach(n => { if(n.folder === name) n.folder = "General"; });
+            if (!folders.includes("General")) folders.push("General");
+            save(); renderFolderOptions();
+        }
+    }
+
+    function renderFolderOptions() {
+        const select = document.getElementById('note-folder');
+        select.innerHTML = folders.map(f => `<option value="${f}">${f}</option>`).join('');
     }
 
     function loadNote(id) {
@@ -218,15 +243,14 @@
 
     function newNote() {
         const id = Date.now();
-        const folder = document.getElementById('search-input').value ? folders[0] : (folders[0] || "General");
-        notes.unshift({ id, title: '', folder, content: '<div>Start...</div>', font: 'font-dmsans', size: 'size-medium', updated: id });
+        notes.unshift({ id, title: '', folder: folders[0], content: '<div>Start writing...</div>', font: 'font-dmsans', size: 'size-medium', updated: id });
         loadNote(id);
     }
 
     function deleteNote() {
         if (confirm('Delete this note?')) {
             notes = notes.filter(n => n.id !== currentId);
-            localStorage.setItem('pkm_v3_notes', JSON.stringify(notes));
+            localStorage.setItem('pkm_v5_notes', JSON.stringify(notes));
             if (notes.length > 0) loadNote(notes[0].id); else newNote();
         }
     }
