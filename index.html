@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Styled PKM</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Rich Text PKM</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=EB+Garamond:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root { 
@@ -19,39 +18,44 @@
         
         body { font-family: 'DM Sans', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); }
         
-        #sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border); }
+        /* Sidebar */
+        #sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
         #note-list { flex: 1; overflow-y: auto; }
-        .note-item { padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 0.9rem; }
-        .note-item.active { border-left: 4px solid var(--primary); background: var(--item-hover); }
+        .note-item { padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .note-item.active { background: var(--item-hover); border-left: 4px solid var(--primary); font-weight: bold; }
 
-        #editor-container { flex: 1; display: flex; flex-direction: column; padding: 20px; max-width: 900px; margin: 0 auto; width: 100%; }
-        .toolbar { display: flex; gap: 8px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        /* Main Editor */
+        #main { flex: 1; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+        #editor-container { width: 100%; max-width: 800px; padding: 40px 20px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
         
-        #note-title { font-size: 2rem; font-weight: bold; border: none; outline: none; background: transparent; color: var(--text); margin-bottom: 15px; width: 100%; }
+        #note-title { font-size: 2.5rem; font-weight: bold; border: none; outline: none; background: transparent; color: var(--text); margin-bottom: 20px; width: 100%; }
         
-        /* Typography classes */
+        /* Toolbar */
+        .toolbar { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; sticky; top: 0; background: var(--bg); z-index: 10; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        
+        /* The Canvas */
+        #editor { 
+            flex: 1; min-height: 400px; outline: none; line-height: 1.6; 
+            background: transparent; color: var(--text);
+        }
+
+        /* Typography */
         .font-garamond { font-family: 'EB Garamond', serif; }
         .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
         .font-dmsans { font-family: 'DM Sans', sans-serif; }
 
-        .size-small { font-size: 0.9rem; }
-        .size-medium { font-size: 1.1rem; }
-        .size-large { font-size: 1.4rem; }
-        .size-xlarge { font-size: 1.8rem; }
-
-        #note-body, #preview { 
-            flex: 1; border: none; padding: 10px 0; 
-            background: var(--bg); color: var(--text); 
-            line-height: 1.6; outline: none; resize: none;
-        }
+        .size-small { font-size: 14px; }
+        .size-medium { font-size: 18px; }
+        .size-large { font-size: 24px; }
+        .size-xlarge { font-size: 32px; }
 
         button, select { 
             padding: 6px 10px; cursor: pointer; border: 1px solid var(--border); 
-            background: var(--bg); color: var(--text); border-radius: 4px; font-size: 0.85rem;
+            background: var(--bg); color: var(--text); border-radius: 4px; font-size: 0.8rem;
         }
         button:hover { background: var(--item-hover); }
-        button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        button.active { background: var(--primary); color: white; }
     </style>
 </head>
 <body data-theme="light">
@@ -59,93 +63,81 @@
 <div id="sidebar">
     <div class="sidebar-header">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <b style="letter-spacing: 1px;">VAULT</b>
+            <b style="letter-spacing: 1px;">PKM</b>
             <button onclick="toggleTheme()">🌓</button>
         </div>
-        <input type="text" id="search" placeholder="Search..." oninput="renderList()" style="width:100%; padding:6px; box-sizing:border-box; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
-    </div>
-    <div id="note-list"></div>
-    <div style="padding: 15px; border-top: 1px solid var(--border);">
         <button onclick="newNote()" style="width: 100%; font-weight: bold;">+ New Note</button>
     </div>
+    <div id="note-list"></div>
 </div>
 
-<div id="editor-container">
-    <input type="text" id="note-title" placeholder="Note Title...">
-    
-    <div class="toolbar">
-        <select id="font-select" onchange="updateStyles()">
-            <option value="font-dmsans">DM Sans</option>
-            <option value="font-garamond">EB Garamond</option>
-            <option value="font-jetbrains">JetBrains Mono</option>
-        </select>
-
-        <select id="size-select" onchange="updateStyles()">
-            <option value="size-small">Small</option>
-            <option value="size-medium" selected>Medium</option>
-            <option value="size-large">Large</option>
-            <option value="size-xlarge">Extra Large</option>
-        </select>
-
-        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></div>
-
-        <button onclick="applyStyle('**')"><b>B</b></button>
-        <button onclick="applyStyle('*')"><i>I</i></button>
+<div id="main">
+    <div id="editor-container">
+        <input type="text" id="note-title" placeholder="Untitled">
         
-        <div style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></div>
-        
-        <button id="edit-btn" class="active" onclick="toggleView('edit')">Edit</button>
-        <button id="preview-btn" onclick="toggleView('preview')">Preview</button>
-        <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto; border: none;">Delete</button>
+        <div class="toolbar">
+            <select id="font-family" onchange="updateStyleAttr()">
+                <option value="font-dmsans">DM Sans</option>
+                <option value="font-garamond">EB Garamond</option>
+                <option value="font-jetbrains">JetBrains Mono</option>
+            </select>
+
+            <select id="font-size" onchange="updateStyleAttr()">
+                <option value="size-small">Small</option>
+                <option value="size-medium" selected>Medium</option>
+                <option value="size-large">Large</option>
+                <option value="size-xlarge">Extra Large</option>
+            </select>
+
+            <div style="width: 1px; height: 20px; background: var(--border); margin: 0 5px;"></div>
+
+            <button onclick="exec('bold')"><b>B</b></button>
+            <button onclick="exec('italic')"><i>I</i></button>
+            <button onclick="exec('underline')"><u>U</u></button>
+            <button onclick="exec('insertUnorderedList')">• List</button>
+
+            <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto; border: none;">Delete</button>
+        </div>
+
+        <div id="editor" contenteditable="true" spellcheck="true"></div>
     </div>
-
-    <textarea id="note-body" placeholder="Write something amazing..."></textarea>
-    <div id="preview" style="display:none"></div>
 </div>
 
 <script>
-    let notes = JSON.parse(localStorage.getItem('pkm_v6')) || [];
+    let notes = JSON.parse(localStorage.getItem('pkm_rich_v1')) || [];
     let currentId = null;
+
+    function exec(command) {
+        document.execCommand(command, false, null);
+        save();
+    }
 
     function save() {
         if (currentId === null) return;
         const note = notes.find(n => n.id === currentId);
         note.title = document.getElementById('note-title').value || 'Untitled';
-        note.content = document.getElementById('note-body').value;
-        note.font = document.getElementById('font-select').value;
-        note.size = document.getElementById('size-select').value;
+        note.content = document.getElementById('editor').innerHTML;
+        note.font = document.getElementById('font-family').value;
+        note.size = document.getElementById('font-size').value;
         note.updated = Date.now();
-        localStorage.setItem('pkm_v6', JSON.stringify(notes));
+        localStorage.setItem('pkm_rich_v1', JSON.stringify(notes));
         renderList();
     }
 
-    function applyStyle(symbol) {
-        const area = document.getElementById('note-body');
-        const start = area.selectionStart;
-        const end = area.selectionEnd;
-        const val = area.value;
-        area.value = val.substring(0, start) + symbol + val.substring(start, end) + symbol + val.substring(end);
-        area.focus();
-        save();
-    }
-
-    function updateStyles() {
-        const font = document.getElementById('font-select').value;
-        const size = document.getElementById('size-select').value;
-        const targetClass = `${font} ${size}`;
-        document.getElementById('note-body').className = targetClass;
-        document.getElementById('preview').className = targetClass;
+    function updateStyleAttr() {
+        const font = document.getElementById('font-family').value;
+        const size = document.getElementById('font-size').value;
+        document.getElementById('editor').className = `${font} ${size}`;
         save();
     }
 
     function renderList() {
-        const query = document.getElementById('search').value.toLowerCase();
         const list = document.getElementById('note-list');
         list.innerHTML = '';
-        notes.filter(n => n.title.toLowerCase().includes(query)).sort((a,b) => b.updated - a.updated).forEach(n => {
+        notes.sort((a,b) => b.updated - a.updated).forEach(n => {
             const div = document.createElement('div');
             div.className = `note-item ${n.id === currentId ? 'active' : ''}`;
-            div.textContent = n.title || 'Untitled';
+            div.textContent = n.title;
             div.onclick = () => loadNote(n.id);
             list.appendChild(div);
         });
@@ -155,54 +147,40 @@
         currentId = id;
         const note = notes.find(n => n.id === id);
         document.getElementById('note-title').value = note.title;
-        document.getElementById('note-body').value = note.content;
-        document.getElementById('font-select').value = note.font || 'font-dmsans';
-        document.getElementById('size-select').value = note.size || 'size-medium';
-        updateStyles();
-        toggleView('edit');
+        document.getElementById('editor').innerHTML = note.content || '';
+        document.getElementById('font-family').value = note.font || 'font-dmsans';
+        document.getElementById('font-size').value = note.size || 'size-medium';
+        updateStyleAttr();
         renderList();
     }
 
     function newNote() {
         const id = Date.now();
-        notes.unshift({ id, title: '', content: '', font: 'font-dmsans', size: 'size-medium', updated: id });
+        notes.unshift({ id, title: '', content: '<div>Start writing...</div>', font: 'font-dmsans', size: 'size-medium', updated: id });
         loadNote(id);
     }
 
-    function toggleView(view) {
-        const edit = document.getElementById('note-body');
-        const prev = document.getElementById('preview');
-        if (view === 'preview') {
-            prev.innerHTML = marked.parse(edit.value);
-            edit.style.display = 'none'; prev.style.display = 'block';
-            document.getElementById('preview-btn').classList.add('active');
-            document.getElementById('edit-btn').classList.remove('active');
-        } else {
-            edit.style.display = 'block'; prev.style.display = 'none';
-            document.getElementById('edit-btn').classList.add('active');
-            document.getElementById('preview-btn').classList.remove('active');
+    function deleteNote() {
+        if (confirm('Delete note?')) {
+            notes = notes.filter(n => n.id !== currentId);
+            localStorage.setItem('pkm_rich_v1', JSON.stringify(notes));
+            if (notes.length > 0) loadNote(notes[0].id); else newNote();
         }
     }
 
     function toggleTheme() {
         const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.body.setAttribute('data-theme', theme);
-        localStorage.setItem('pkm_v6_theme', theme);
+        localStorage.setItem('pkm_theme', theme);
     }
 
-    function deleteNote() {
-        if (confirm('Delete this note?')) {
-            notes = notes.filter(n => n.id !== currentId);
-            localStorage.setItem('pkm_v6', JSON.stringify(notes));
-            if (notes.length > 0) loadNote(notes[0].id); else newNote();
-        }
-    }
-
+    // Event Listeners
     document.getElementById('note-title').addEventListener('input', save);
-    document.getElementById('note-body').addEventListener('input', save);
+    document.getElementById('editor').addEventListener('input', save);
     
-    // Auto-load theme
-    if (localStorage.getItem('pkm_v6_theme')) document.body.setAttribute('data-theme', localStorage.getItem('pkm_v6_theme'));
+    // Init
+    const savedTheme = localStorage.getItem('pkm_theme');
+    if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
     if (notes.length > 0) loadNote(notes[0].id); else newNote();
 </script>
 </body>
