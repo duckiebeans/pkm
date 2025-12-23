@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Minimal PKM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <style>
+        :root { 
+            --primary: #2563eb; --bg: #ffffff; --sidebar: #f8fafc; 
+            --border: #e2e8f0; --text: #1e293b; --item-hover: #f1f5f9;
+        }
+        [data-theme="dark"] {
+            --primary: #3b82f6; --bg: #0f172a; --sidebar: #1e293b; 
+            --border: #334155; --text: #f1f5f9; --item-hover: #334155;
+        }
+        
+        body { font-family: system-ui, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); transition: background 0.2s; }
+        
+        #sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        #search { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); }
+        
+        #note-list { flex: 1; overflow-y: auto; }
+        .note-item { padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .note-item:hover { background: var(--item-hover); }
+        .note-item.active { border-left: 4px solid var(--primary); background: var(--item-hover); }
+        .note-item .title { font-weight: bold; display: block; margin-bottom: 4px; }
+        .note-item .tags-preview { font-size: 0.75rem; color: var(--primary); opacity: 0.8; }
+
+        #editor-container { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        #note-title { font-size: 1.5rem; font-weight: bold; border: none; outline: none; background: transparent; color: var(--text); margin-bottom: 10px; }
+        #note-body { flex: 1; border: 1px solid var(--border); padding: 15px; font-family: 'Courier New', monospace; resize: none; outline: none; border-radius: 4px; background: var(--bg); color: var(--text); }
+        #preview { flex: 1; display: none; overflow-y: auto; padding: 15px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); }
+        
+        .toolbar { margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+        button { padding: 6px 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; }
+        button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tag-pill { display: inline-block; background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-right: 4px; }
+    </style>
+</head>
+<body data-theme="light">
+
+<div id="sidebar">
+    <div class="sidebar-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <b style="font-size: 1.2rem;">PKM</b>
+            <button onclick="toggleTheme()" id="theme-toggle">🌙</button>
+        </div>
+        <input type="text" id="search" placeholder="Search notes or #tags..." oninput="renderList()">
+    </div>
+    <div id="note-list"></div>
+    <div style="padding: 15px; border-top: 1px solid var(--border); display: flex; gap: 5px;">
+        <button onclick="newNote()" style="flex: 2; font-weight: bold;">+ New</button>
+        <button onclick="exportJSON()" style="flex: 1; font-size: 0.7rem;">Backup</button>
+    </div>
+</div>
+
+<div id="editor-container">
+    <input type="text" id="note-title" placeholder="Note Title">
+    <div class="toolbar">
+        <button id="edit-btn" class="active" onclick="toggleView('edit')">Edit</button>
+        <button id="preview-btn" onclick="toggleView('preview')">Preview</button>
+        <div id="tag-display" style="margin-left: 10px;"></div>
+        <button onclick="deleteCurrentNote()" style="color: #ef4444; margin-left: auto; border-color: transparent;">Delete</button>
+    </div>
+    <textarea id="note-body" placeholder="Write here... Use #tags to categorize."></textarea>
+    <div id="preview"></div>
+</div>
+
+<script>
+    let notes = JSON.parse(localStorage.getItem('pkm_v2')) || [];
+    let currentNoteId = null;
+
+    // --- Core Logic ---
+    function save() {
+        if (currentNoteId !== null) {
+            const note = notes.find(n => n.id === currentNoteId);
+            note.title = document.getElementById('note-title').value || 'Untitled';
+            note.content = document.getElementById('note-body').value;
+            note.tags = [...note.content.matchAll(/#(\w+)/g)].map(m => m[1].toLowerCase());
+            note.updated = Date.now();
+            localStorage.setItem('pkm_v2', JSON.stringify(notes));
+            updateTagDisplay(note.tags);
+            renderList();
+        }
+    }
+
+    document.getElementById('note-title').addEventListener('input', save);
+    document.getElementById('note-body').addEventListener('input', save);
+
+    function newNote() {
+        const id = Date.now();
+        notes.unshift({ id, title: '', content: '', tags: [], updated: id });
+        currentNoteId = id;
+        loadNote(id);
+    }
+
+    function loadNote(id) {
+        currentNoteId = id;
+        const note = notes.find(n => n.id === id);
+        document.getElementById('note-title').value = note.title;
+        document.getElementById('note-body').value = note.content;
+        updateTagDisplay(note.tags);
+        toggleView('edit');
+        renderList();
+    }
+
+    function renderList() {
+        const query = document.getElementById('search').value.toLowerCase();
+        const list = document.getElementById('note-list');
+        list.innerHTML = '';
+        
+        notes
+            .filter(n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query))
+            .sort((a, b) => b.updated - a.updated)
+            .forEach(n => {
+                const div = document.createElement('div');
+                div.className = `note-item ${n.id === currentNoteId ? 'active' : ''}`;
+                div.innerHTML = `
+                    <span class="title">${n.title || 'Untitled'}</span>
+                    <span class="tags-preview">${n.tags.map(t => '#' + t).join(' ')}</span>
+                `;
+                div.onclick = () => loadNote(n.id);
+                list.appendChild(div);
+            });
+    }
+
+    // --- UI Helpers ---
+    function toggleView(view) {
+        const body = document.getElementById('note-body');
+        const preview = document.getElementById('preview');
+        if (view === 'preview') {
+            preview.innerHTML = marked.parse(body.value);
+            body.style.display = 'none'; preview.style.display = 'block';
+            document.getElementById('preview-btn').classList.add('active');
+            document.getElementById('edit-btn').classList.remove('active');
+        } else {
+            body.style.display = 'block'; preview.style.display = 'none';
+            document.getElementById('edit-btn').classList.add('active');
+            document.getElementById('preview-btn').classList.remove('active');
+        }
+    }
+
+    function updateTagDisplay(tags) {
+        const container = document.getElementById('tag-display');
+        container.innerHTML = [...new Set(tags)].map(t => `<span class="tag-pill">#${t}</span>`).join('');
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const isDark = body.getAttribute('data-theme') === 'dark';
+        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
+        localStorage.setItem('pkm_theme', isDark ? 'light' : 'dark');
+    }
+
+    function deleteCurrentNote() {
+        if (confirm('Permanently delete this note?')) {
+            notes = notes.filter(n => n.id !== currentNoteId);
+            localStorage.setItem('pkm_v2', JSON.stringify(notes));
+            if (notes.length > 0) loadNote(notes[0].id);
+            else newNote();
+        }
+    }
+
+    function exportJSON() {
+        const blob = new Blob([JSON.stringify(notes, null, 2)], {type : 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'my_knowledge_base.json'; a.click();
+    }
+
+    // --- Init ---
+    const savedTheme = localStorage.getItem('pkm_theme');
+    if (savedTheme) {
+        document.body.setAttribute('data-theme', savedTheme);
+        document.getElementById('theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    }
+    if (notes.length > 0) loadNote(notes[0].id);
+    else newNote();
+</script>
+
+</body>
+</html>
