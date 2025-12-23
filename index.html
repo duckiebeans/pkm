@@ -3,115 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rich Text PKM - Collapsible</title>
+    <title>Knowledgebase</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=EB+Garamond:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
             --primary: #2563eb; --bg: #ffffff; --sidebar: #f8fafc; 
             --border: #e2e8f0; --text: #1e293b; --item-hover: #f1f5f9;
-            --drag-over: #dbeafe;
+            --drag-over: #dbeafe; --subtle: #64748b;
         }
         [data-theme="dark"] {
             --primary: #3b82f6; --bg: #0f172a; --sidebar: #1e293b; 
             --border: #334155; --text: #f1f5f9; --item-hover: #334155;
-            --drag-over: #1e293b;
+            --drag-over: #1e293b; --subtle: #94a3b8;
         }
         body { font-family: 'DM Sans', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
         
-        #sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        #sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
-        #search-input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-top: 10px; background: var(--bg); color: var(--text); box-sizing: border-box; }
+        .app-branding { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .app-branding b { letter-spacing: 1px; font-size: 0.9rem; }
+
+        #search-input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; font-size: 0.85rem; }
         
         #note-list { flex: 1; overflow-y: auto; padding: 10px 0; }
-        
-        /* Collapsible Styling */
         .folder-group { margin-bottom: 5px; }
         .folder-header { 
-            padding: 10px 20px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; 
-            color: #64748b; display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer; user-select: none;
+            padding: 8px 20px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; 
+            color: var(--subtle); display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer;
         }
         .folder-header:hover { background: var(--item-hover); }
-        .folder-toggle-icon { transition: transform 0.2s; display: inline-block; margin-right: 8px; font-size: 10px; }
+        .folder-toggle-icon { transition: transform 0.2s; display: inline-block; margin-right: 5px; }
         .folder-group.collapsed .folder-toggle-icon { transform: rotate(-90deg); }
         .folder-group.collapsed .note-items-container { display: none; }
         
-        .folder-actions { display: none; gap: 8px; cursor: pointer; }
+        .folder-actions { display: none; gap: 8px; }
         .folder-header:hover .folder-actions { display: flex; }
         
-        .note-item { padding: 8px 20px 8px 42px; cursor: grab; font-size: 0.9rem; transition: 0.2s; border-left: 4px solid transparent; }
+        .note-item { padding: 8px 20px 8px 40px; cursor: grab; font-size: 0.9rem; transition: 0.2s; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .note-item:hover { background: var(--item-hover); }
-        .note-item.active { background: var(--item-hover); border-left: 4px solid var(--primary); font-weight: bold; }
+        .note-item.active { background: var(--item-hover); border-left-color: var(--primary); font-weight: 600; }
 
-        #main { flex: 1; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
-        #editor-container { width: 100%; max-width: 800px; padding: 40px 20px; display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box; }
-        #note-title { font-size: 2.5rem; font-weight: bold; border: none; outline: none; background: transparent; color: var(--text); width: 100%; }
-        .metadata { margin-bottom: 20px; display: flex; gap: 15px; font-size: 0.8rem; opacity: 0.8; align-items: center;}
+        #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #editor-container { flex: 1; display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding-bottom: 40px; }
+        .content-width { width: 100%; max-width: 800px; padding: 40px 20px; box-sizing: border-box; }
+        
+        #note-title { font-size: 2.2rem; font-weight: 700; border: none; outline: none; background: transparent; color: var(--text); width: 100%; margin-bottom: 10px; }
+        .metadata { margin-bottom: 20px; font-size: 0.8rem; color: var(--subtle); display: flex; gap: 10px; align-items: center; }
 
         .toolbar { 
             display: flex; gap: 8px; margin-bottom: 20px; align-items: center; 
             flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); 
             z-index: 10; padding: 10px 0; border-bottom: 1px solid var(--border); 
         }
-        #editor { flex: 1; min-height: 400px; outline: none; line-height: 1.6; }
+        #editor { flex: 1; min-height: 400px; outline: none; line-height: 1.6; font-size: 18px; }
+        
+        /* Table Styles */
+        table { border-collapse: collapse; width: 100%; margin: 15px 0; border: 1px solid var(--border); }
+        table td, table th { border: 1px solid var(--border); padding: 8px; min-width: 50px; }
+        table th { background: var(--sidebar); font-weight: bold; text-align: left; }
+
         .todo-item { display: flex; align-items: flex-start; gap: 10px; margin: 5px 0; }
+        .status-bar { padding: 8px 20px; font-size: 0.75rem; border-top: 1px solid var(--border); color: var(--subtle); display: flex; gap: 20px; background: var(--sidebar); }
 
         .font-garamond { font-family: 'EB Garamond', serif; }
         .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
-        .size-small { font-size: 14px; }
+        .size-small { font-size: 15px; }
         .size-medium { font-size: 18px; }
-        .size-large { font-size: 24px; }
-        button, select { padding: 6px 10px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; }
+        .size-large { font-size: 22px; }
+        
+        button, select { padding: 4px 8px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; font-size: 0.8rem; }
+        .btn-new { background: var(--primary); color: white; border: none; padding: 8px; width: 100%; font-weight: 600; margin-top: 10px; }
     </style>
 </head>
 <body data-theme="light">
 
 <div id="sidebar">
     <div class="sidebar-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <b style="letter-spacing: 1px;">STORY BIBLE</b>
-            <button onclick="toggleTheme()">🌓</button>
+        <div class="app-branding">
+            <b>KNOWLEDGEBASE</b>
+            <button onclick="toggleTheme()" title="Toggle Theme">🌓</button>
         </div>
         <input type="text" id="search-input" placeholder="Search notes..." oninput="renderList()">
-        <button onclick="newNote()" style="width: 100%; margin-top: 10px; font-weight: bold; background: var(--primary); color: white; border: none; padding: 10px;">+ New Note</button>
-        <button onclick="addFolder()" style="width: 100%; margin-top: 5px; font-size: 0.7rem;">+ Add Folder</button>
+        <button class="btn-new" onclick="newNote()">+ New Note</button>
+        <button onclick="addFolder()" style="width: 100%; margin-top: 5px; font-size: 0.7rem; opacity: 0.7;">+ New Folder</button>
     </div>
     <div id="note-list"></div>
 </div>
 
 <div id="main">
     <div id="editor-container">
-        <input type="text" id="note-title" placeholder="Untitled Note">
-        <div class="metadata">
-            Folder: <select id="note-folder" onchange="save()"></select>
-        </div>
-        
-        <div class="toolbar">
-            <select id="font-family" onchange="updateStyleAttr()">
-                <option value="font-dmsans">DM Sans</option>
-                <option value="font-garamond">EB Garamond</option>
-                <option value="font-jetbrains">JetBrains Mono</option>
-            </select>
-            <select id="font-size" onchange="updateStyleAttr()">
-                <option value="size-small">Small</option>
-                <option value="size-medium" selected>Medium</option>
-                <option value="size-large">Large</option>
-            </select>
-            <button onclick="exec('bold')"><b>B</b></button>
-            <button onclick="exec('italic')"><i>I</i></button>
-            <button onclick="insertCheckbox()">☑ Task</button>
-            <button onclick="exec('insertUnorderedList')">• List</button>
-            <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto; border:none; background:none;">Delete</button>
-        </div>
+        <div class="content-width">
+            <input type="text" id="note-title" placeholder="Untitled">
+            <div class="metadata">
+                Folder: <select id="note-folder" onchange="save()"></select>
+            </div>
+            
+            <div class="toolbar">
+                <select id="font-family" onchange="updateStyleAttr()">
+                    <option value="font-dmsans">Sans Serif</option>
+                    <option value="font-garamond">Serif</option>
+                    <option value="font-jetbrains">Mono</option>
+                </select>
+                <select id="font-size" onchange="updateStyleAttr()">
+                    <option value="size-small">Small</option>
+                    <option value="size-medium" selected>Medium</option>
+                    <option value="size-large">Large</option>
+                </select>
+                <button onclick="exec('bold')" title="Bold"><b>B</b></button>
+                <button onclick="exec('italic')" title="Italic"><i>I</i></button>
+                <button onclick="insertCheckbox()">☑ Task</button>
+                <button onclick="insertTable()" title="Insert Table">田 Table</button>
+                <button onclick="exec('insertUnorderedList')">• List</button>
+                <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto; border:none; background:none;">Delete</button>
+            </div>
 
-        <div id="editor" contenteditable="true"></div>
+            <div id="editor" contenteditable="true"></div>
+        </div>
+    </div>
+    <div class="status-bar">
+        <span id="word-count">0 words</span>
+        <span id="char-count">0 characters</span>
     </div>
 </div>
 
 <script>
-    let notes = JSON.parse(localStorage.getItem('pkm_v5_notes')) || [];
-    let folders = JSON.parse(localStorage.getItem('pkm_v5_folders')) || ["General", "Characters", "Settings"];
-    let collapsedFolders = JSON.parse(localStorage.getItem('pkm_v5_collapsed')) || [];
+    let notes = JSON.parse(localStorage.getItem('kb_v7_notes')) || [];
+    let folders = JSON.parse(localStorage.getItem('kb_v7_folders')) || ["General", "Work", "Personal"];
+    let collapsedFolders = JSON.parse(localStorage.getItem('kb_v7_collapsed')) || [];
     let currentId = null;
 
     function exec(command) {
@@ -120,9 +139,36 @@
     }
 
     function insertCheckbox() {
-        const html = `<div class="todo-item" contenteditable="false"><input type="checkbox" onchange="this.toggleAttribute('checked')"> <span contenteditable="true" style="outline:none">New task...</span></div>`;
+        const html = `<div class="todo-item" contenteditable="false"><input type="checkbox" onchange="this.toggleAttribute('checked')"> <span contenteditable="true" style="outline:none">Task...</span></div>`;
         document.execCommand('insertHTML', false, html);
         save();
+    }
+
+    function insertTable() {
+        const rows = prompt("Enter number of rows:", "3");
+        const cols = prompt("Enter number of columns:", "2");
+        if (!rows || !cols) return;
+
+        let tableHtml = "<table><thead><tr>";
+        for (let j = 0; j < cols; j++) tableHtml += "<th>Header</th>";
+        tableHtml += "</tr></thead><tbody>";
+        for (let i = 0; i < rows; i++) {
+            tableHtml += "<tr>";
+            for (let j = 0; j < cols; j++) tableHtml += "<td>Cell</td>";
+            tableHtml += "</tr>";
+        }
+        tableHtml += "</tbody></table><p><br></p>";
+        
+        document.execCommand('insertHTML', false, tableHtml);
+        save();
+    }
+
+    function updateCounts() {
+        const text = document.getElementById('editor').innerText || "";
+        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        const chars = text.length;
+        document.getElementById('word-count').textContent = `${words} words`;
+        document.getElementById('char-count').textContent = `${chars} characters`;
     }
 
     function save() {
@@ -136,8 +182,9 @@
             note.size = document.getElementById('font-size').value;
             note.updated = Date.now();
         }
-        localStorage.setItem('pkm_v5_notes', JSON.stringify(notes));
-        localStorage.setItem('pkm_v5_folders', JSON.stringify(folders));
+        localStorage.setItem('kb_v7_notes', JSON.stringify(notes));
+        localStorage.setItem('kb_v7_folders', JSON.stringify(folders));
+        updateCounts();
         renderList();
     }
 
@@ -147,7 +194,7 @@
         } else {
             collapsedFolders.push(folder);
         }
-        localStorage.setItem('pkm_v5_collapsed', JSON.stringify(collapsedFolders));
+        localStorage.setItem('kb_v7_collapsed', JSON.stringify(collapsedFolders));
         renderList();
     }
 
@@ -163,7 +210,6 @@
             const group = document.createElement('div');
             group.className = `folder-group ${isCollapsed ? 'collapsed' : ''}`;
             
-            // Drag and drop handlers
             group.ondragover = (e) => { e.preventDefault(); group.style.background = 'var(--drag-over)'; };
             group.ondragleave = (e) => { group.style.background = ''; };
             group.ondrop = (e) => {
@@ -176,7 +222,7 @@
 
             group.innerHTML = `
                 <div class="folder-header" onclick="toggleFolder('${folder}')">
-                    <span><span class="folder-toggle-icon">▼</span>${folder} (${folderNotes.length})</span>
+                    <span><span class="folder-toggle-icon">▼</span>${folder}</span>
                     <div class="folder-actions">
                         <span onclick="event.stopPropagation(); renameFolder('${folder}')">✎</span>
                         <span onclick="event.stopPropagation(); deleteFolder('${folder}')">🗑</span>
@@ -199,7 +245,6 @@
         });
     }
 
-    // Folder/Note Management Helpers
     function addFolder() {
         const name = prompt("New folder name:");
         if (name && !folders.includes(name)) { folders.push(name); save(); renderFolderOptions(); }
@@ -215,7 +260,7 @@
     }
 
     function deleteFolder(name) {
-        if (confirm(`Delete folder "${name}"? Notes move to General.`)) {
+        if (confirm(`Delete folder "${name}"? Notes will move to General.`)) {
             folders = folders.filter(f => f !== name);
             notes.forEach(n => { if(n.folder === name) n.folder = "General"; });
             if (!folders.includes("General")) folders.push("General");
@@ -238,19 +283,20 @@
         document.getElementById('font-family').value = note.font || 'font-dmsans';
         document.getElementById('font-size').value = note.size || 'size-medium';
         updateStyleAttr();
+        updateCounts();
         renderList();
     }
 
     function newNote() {
         const id = Date.now();
-        notes.unshift({ id, title: '', folder: folders[0], content: '<div>Start writing...</div>', font: 'font-dmsans', size: 'size-medium', updated: id });
+        notes.unshift({ id, title: '', folder: folders[0], content: '', font: 'font-dmsans', size: 'size-medium', updated: id });
         loadNote(id);
     }
 
     function deleteNote() {
         if (confirm('Delete this note?')) {
             notes = notes.filter(n => n.id !== currentId);
-            localStorage.setItem('pkm_v5_notes', JSON.stringify(notes));
+            localStorage.setItem('kb_v7_notes', JSON.stringify(notes));
             if (notes.length > 0) loadNote(notes[0].id); else newNote();
         }
     }
@@ -265,13 +311,13 @@
     function toggleTheme() {
         const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.body.setAttribute('data-theme', theme);
-        localStorage.setItem('pkm_theme', theme);
+        localStorage.setItem('kb_theme', theme);
     }
 
     document.getElementById('note-title').addEventListener('input', save);
     document.getElementById('editor').addEventListener('input', save);
     
-    const savedTheme = localStorage.getItem('pkm_theme');
+    const savedTheme = localStorage.getItem('kb_theme');
     if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
     renderFolderOptions();
     if (notes.length > 0) loadNote(notes[0].id); else newNote();
