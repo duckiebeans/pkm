@@ -3,150 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knowledgebase</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=EB+Garamond:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Knowledgebase - PKM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { 
             --primary: #2563eb; --bg: #ffffff; --sidebar: #f8fafc; 
             --border: #e2e8f0; --text: #1e293b; --item-hover: #f1f5f9;
-            --drag-over: #dbeafe; --subtle: #64748b;
         }
         [data-theme="dark"] {
             --primary: #3b82f6; --bg: #0f172a; --sidebar: #1e293b; 
             --border: #334155; --text: #f1f5f9; --item-hover: #334155;
-            --drag-over: #1e293b; --subtle: #94a3b8;
         }
-        body { font-family: 'DM Sans', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; }
         
+        /* Sidebar */
         #sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
-        .app-branding { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .app-branding b { letter-spacing: 1px; font-size: 0.9rem; }
+        .branding { font-weight: 700; letter-spacing: -0.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        
+        #search-input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.85rem; }
+        .btn-new { background: var(--primary); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
 
-        #search-input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; font-size: 0.85rem; }
-        
         #note-list { flex: 1; overflow-y: auto; padding: 10px 0; }
-        .folder-group { margin-bottom: 5px; }
-        .folder-header { 
-            padding: 8px 20px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; 
-            color: var(--subtle); display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer;
-        }
-        .folder-header:hover { background: var(--item-hover); }
-        .folder-toggle-icon { transition: transform 0.2s; display: inline-block; margin-right: 5px; }
-        .folder-group.collapsed .folder-toggle-icon { transform: rotate(-90deg); }
-        .folder-group.collapsed .note-items-container { display: none; }
-        
-        .folder-actions { display: none; gap: 8px; }
-        .folder-header:hover .folder-actions { display: flex; }
-        
-        .note-item { padding: 8px 20px 8px 40px; cursor: grab; font-size: 0.9rem; transition: 0.2s; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .folder-section { margin-bottom: 10px; }
+        .folder-label { padding: 8px 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .note-item { padding: 8px 20px 8px 35px; cursor: pointer; font-size: 0.9rem; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .note-item:hover { background: var(--item-hover); }
         .note-item.active { background: var(--item-hover); border-left-color: var(--primary); font-weight: 600; }
 
+        /* Main */
         #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        #editor-container { flex: 1; display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding-bottom: 40px; }
-        .content-width { width: 100%; max-width: 800px; padding: 40px 20px; box-sizing: border-box; }
+        #editor-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .editor-width { width: 100%; max-width: 850px; padding: 40px 25px; }
         
-        #note-title { font-size: 2.2rem; font-weight: 700; border: none; outline: none; background: transparent; color: var(--text); width: 100%; margin-bottom: 10px; }
-        .metadata { margin-bottom: 20px; font-size: 0.8rem; color: var(--subtle); display: flex; gap: 10px; align-items: center; }
+        #note-title { font-size: 2.5rem; font-weight: 800; border: none; outline: none; background: transparent; color: var(--text); width: 100%; margin-bottom: 10px; }
+        .meta-bar { display: flex; gap: 15px; font-size: 0.8rem; margin-bottom: 20px; opacity: 0.7; align-items: center; }
 
         .toolbar { 
-            display: flex; gap: 8px; margin-bottom: 20px; align-items: center; 
-            flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); 
-            z-index: 10; padding: 10px 0; border-bottom: 1px solid var(--border); 
+            display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); 
+            position: sticky; top: 0; background: var(--bg); z-index: 10; margin-bottom: 20px; align-items: center;
         }
-        #editor { flex: 1; min-height: 400px; outline: none; line-height: 1.6; font-size: 18px; }
-        
-        /* Table Styles */
-        table { border-collapse: collapse; width: 100%; margin: 15px 0; border: 1px solid var(--border); }
-        table td, table th { border: 1px solid var(--border); padding: 8px; min-width: 50px; }
-        table th { background: var(--sidebar); font-weight: bold; text-align: left; }
 
-        .todo-item { display: flex; align-items: flex-start; gap: 10px; margin: 5px 0; }
-        .status-bar { padding: 8px 20px; font-size: 0.75rem; border-top: 1px solid var(--border); color: var(--subtle); display: flex; gap: 20px; background: var(--sidebar); }
-
-        .font-garamond { font-family: 'EB Garamond', serif; }
-        .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
-        .size-small { font-size: 15px; }
-        .size-medium { font-size: 18px; }
-        .size-large { font-size: 22px; }
+        /* PKM Editor Content */
+        #editor { flex: 1; min-height: 600px; outline: none; line-height: 1.6; font-size: 1.1rem; }
         
-        button, select { padding: 4px 8px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; font-size: 0.8rem; }
-        .btn-new { background: var(--primary); color: white; border: none; padding: 8px; width: 100%; font-weight: 600; margin-top: 10px; }
+        /* Table Styling */
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; border: 1px solid var(--border); }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; min-width: 80px; }
+        th { background: var(--sidebar); font-weight: 600; }
+
+        button, select { padding: 6px 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        .btn-table { border: 2px solid var(--primary); font-weight: 700; background: #eff6ff; color: var(--primary); }
+        [data-theme="dark"] .btn-table { background: #1e293b; }
+
+        .status-bar { padding: 8px 25px; font-size: 0.75rem; background: var(--sidebar); border-top: 1px solid var(--border); display: flex; gap: 20px; }
     </style>
 </head>
 <body data-theme="light">
 
 <div id="sidebar">
     <div class="sidebar-header">
-        <div class="app-branding">
-            <b>KNOWLEDGEBASE</b>
-            <button onclick="toggleTheme()" title="Toggle Theme">🌓</button>
-        </div>
-        <input type="text" id="search-input" placeholder="Search notes..." oninput="renderList()">
-        <button class="btn-new" onclick="newNote()">+ New Note</button>
-        <button onclick="addFolder()" style="width: 100%; margin-top: 5px; font-size: 0.7rem; opacity: 0.7;">+ New Folder</button>
+        <div class="branding">KNOWLEDGEBASE <span onclick="toggleTheme()" style="cursor:pointer">🌓</span></div>
+        <input type="text" id="search-input" placeholder="Search entries..." oninput="renderList()">
+        <button class="btn-new" onclick="newNote()">+ New Entry</button>
     </div>
     <div id="note-list"></div>
 </div>
 
 <div id="main">
     <div id="editor-container">
-        <div class="content-width">
+        <div class="editor-width">
             <input type="text" id="note-title" placeholder="Untitled">
-            <div class="metadata">
+            <div class="meta-bar">
                 Folder: <select id="note-folder" onchange="save()"></select>
+                <span id="save-indicator">Saved</span>
             </div>
             
             <div class="toolbar">
+                <button class="btn-table" onclick="insertTable()">+ Insert Table</button>
+                <button onclick="exec('bold')"><b>B</b></button>
+                <button onclick="exec('italic')"><i>I</i></button>
+                <button onclick="insertCheckbox()">☑ Task</button>
+                <button onclick="exec('insertUnorderedList')">• List</button>
                 <select id="font-family" onchange="updateStyleAttr()">
-                    <option value="font-dmsans">Sans Serif</option>
-                    <option value="font-garamond">Serif</option>
+                    <option value="font-inter">Sans</option>
                     <option value="font-jetbrains">Mono</option>
                 </select>
-                <select id="font-size" onchange="updateStyleAttr()">
-                    <option value="size-small">Small</option>
-                    <option value="size-medium" selected>Medium</option>
-                    <option value="size-large">Large</option>
-                </select>
-                <button onclick="exec('bold')" title="Bold"><b>B</b></button>
-                <button onclick="exec('italic')" title="Italic"><i>I</i></button>
-                <button onclick="insertCheckbox()">☑ Task</button>
-                <button onclick="insertTable()" title="Insert Table">田 Table</button>
-                <button onclick="exec('insertUnorderedList')">• List</button>
-                <button onclick="deleteNote()" style="color:#ef4444; margin-left: auto; border:none; background:none;">Delete</button>
+                <button onclick="deleteNote()" style="margin-left:auto; color:#ef4444; border:none;">Delete</button>
             </div>
 
-            <div id="editor" contenteditable="true"></div>
+            <div id="editor" contenteditable="true" oninput="save()"></div>
         </div>
     </div>
     <div class="status-bar">
         <span id="word-count">0 words</span>
-        <span id="char-count">0 characters</span>
     </div>
 </div>
 
 <script>
-    let notes = JSON.parse(localStorage.getItem('kb_v7_notes')) || [];
-    let folders = JSON.parse(localStorage.getItem('kb_v7_folders')) || ["General", "Work", "Personal"];
-    let collapsedFolders = JSON.parse(localStorage.getItem('kb_v7_collapsed')) || [];
+    let notes = JSON.parse(localStorage.getItem('pkm_notes_v9')) || [];
+    let folders = JSON.parse(localStorage.getItem('pkm_folders_v9')) || ["General", "Projects", "Resources"];
     let currentId = null;
 
-    function exec(command) {
-        document.execCommand(command, false, null);
-        save();
-    }
-
-    function insertCheckbox() {
-        const html = `<div class="todo-item" contenteditable="false"><input type="checkbox" onchange="this.toggleAttribute('checked')"> <span contenteditable="true" style="outline:none">Task...</span></div>`;
-        document.execCommand('insertHTML', false, html);
-        save();
-    }
+    function exec(cmd) { document.execCommand(cmd, false, null); save(); }
 
     function insertTable() {
-        const rows = prompt("Enter number of rows:", "3");
-        const cols = prompt("Enter number of columns:", "2");
+        const rows = prompt("Number of rows:", "3");
+        const cols = prompt("Number of columns:", "2");
         if (!rows || !cols) return;
 
         let tableHtml = "<table><thead><tr>";
@@ -154,21 +117,18 @@
         tableHtml += "</tr></thead><tbody>";
         for (let i = 0; i < rows; i++) {
             tableHtml += "<tr>";
-            for (let j = 0; j < cols; j++) tableHtml += "<td>Cell</td>";
+            for (let j = 0; j < cols; j++) tableHtml += "<td>Data</td>";
             tableHtml += "</tr>";
         }
         tableHtml += "</tbody></table><p><br></p>";
-        
         document.execCommand('insertHTML', false, tableHtml);
         save();
     }
 
-    function updateCounts() {
-        const text = document.getElementById('editor').innerText || "";
-        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        const chars = text.length;
-        document.getElementById('word-count').textContent = `${words} words`;
-        document.getElementById('char-count').textContent = `${chars} characters`;
+    function insertCheckbox() {
+        const html = `<div style="display:flex; gap:10px; margin:5px 0;" contenteditable="false"><input type="checkbox"> <span contenteditable="true" style="outline:none">Task item</span></div>`;
+        document.execCommand('insertHTML', false, html);
+        save();
     }
 
     function save() {
@@ -178,99 +138,43 @@
             note.title = document.getElementById('note-title').value || 'Untitled';
             note.folder = document.getElementById('note-folder').value;
             note.content = document.getElementById('editor').innerHTML;
-            note.font = document.getElementById('font-family').value;
-            note.size = document.getElementById('font-size').value;
             note.updated = Date.now();
         }
-        localStorage.setItem('kb_v7_notes', JSON.stringify(notes));
-        localStorage.setItem('kb_v7_folders', JSON.stringify(folders));
-        updateCounts();
+        localStorage.setItem('pkm_notes_v9', JSON.stringify(notes));
+        updateWordCount();
         renderList();
+        
+        const indicator = document.getElementById('save-indicator');
+        indicator.innerText = "Saving...";
+        setTimeout(() => indicator.innerText = "Saved", 500);
     }
 
-    function toggleFolder(folder) {
-        if (collapsedFolders.includes(folder)) {
-            collapsedFolders = collapsedFolders.filter(f => f !== folder);
-        } else {
-            collapsedFolders.push(folder);
-        }
-        localStorage.setItem('kb_v7_collapsed', JSON.stringify(collapsedFolders));
-        renderList();
+    function updateWordCount() {
+        const text = document.getElementById('editor').innerText || "";
+        const count = text.trim() ? text.trim().split(/\s+/).length : 0;
+        document.getElementById('word-count').textContent = `${count} words`;
     }
 
     function renderList() {
         const list = document.getElementById('note-list');
-        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const search = document.getElementById('search-input').value.toLowerCase();
         list.innerHTML = '';
 
-        folders.forEach(folder => {
-            const folderNotes = notes.filter(n => n.folder === folder && n.title.toLowerCase().includes(searchTerm));
-            const isCollapsed = collapsedFolders.includes(folder);
-
-            const group = document.createElement('div');
-            group.className = `folder-group ${isCollapsed ? 'collapsed' : ''}`;
+        folders.forEach(f => {
+            const folderNotes = notes.filter(n => n.folder === f && n.title.toLowerCase().includes(search));
+            const div = document.createElement('div');
+            div.className = 'folder-section';
+            div.innerHTML = `<div class="folder-label">▼ ${f}</div>`;
             
-            group.ondragover = (e) => { e.preventDefault(); group.style.background = 'var(--drag-over)'; };
-            group.ondragleave = (e) => { group.style.background = ''; };
-            group.ondrop = (e) => {
-                e.preventDefault();
-                group.style.background = '';
-                const noteId = parseInt(e.dataTransfer.getData('text/plain'));
-                const note = notes.find(n => n.id === noteId);
-                if (note) { note.folder = folder; save(); }
-            };
-
-            group.innerHTML = `
-                <div class="folder-header" onclick="toggleFolder('${folder}')">
-                    <span><span class="folder-toggle-icon">▼</span>${folder}</span>
-                    <div class="folder-actions">
-                        <span onclick="event.stopPropagation(); renameFolder('${folder}')">✎</span>
-                        <span onclick="event.stopPropagation(); deleteFolder('${folder}')">🗑</span>
-                    </div>
-                </div>
-                <div class="note-items-container"></div>`;
-            
-            const container = group.querySelector('.note-items-container');
-            folderNotes.sort((a,b) => b.updated - a.updated).forEach(n => {
-                const div = document.createElement('div');
-                div.className = `note-item ${n.id === currentId ? 'active' : ''}`;
-                div.textContent = n.title || 'Untitled';
-                div.draggable = true;
-                div.ondragstart = (e) => { e.dataTransfer.setData('text/plain', n.id); e.target.style.opacity = '0.5'; };
-                div.ondragend = (e) => { e.target.style.opacity = '1'; };
-                div.onclick = (e) => { e.stopPropagation(); loadNote(n.id); };
-                container.appendChild(div);
+            folderNotes.forEach(n => {
+                const item = document.createElement('div');
+                item.className = `note-item ${n.id === currentId ? 'active' : ''}`;
+                item.textContent = n.title;
+                item.onclick = () => loadNote(n.id);
+                div.appendChild(item);
             });
-            list.appendChild(group);
+            list.appendChild(div);
         });
-    }
-
-    function addFolder() {
-        const name = prompt("New folder name:");
-        if (name && !folders.includes(name)) { folders.push(name); save(); renderFolderOptions(); }
-    }
-
-    function renameFolder(oldName) {
-        const newName = prompt(`Rename "${oldName}" to:`, oldName);
-        if (newName && newName !== oldName) {
-            folders = folders.map(f => f === oldName ? newName : f);
-            notes.forEach(n => { if(n.folder === oldName) n.folder = newName; });
-            save(); renderFolderOptions();
-        }
-    }
-
-    function deleteFolder(name) {
-        if (confirm(`Delete folder "${name}"? Notes will move to General.`)) {
-            folders = folders.filter(f => f !== name);
-            notes.forEach(n => { if(n.folder === name) n.folder = "General"; });
-            if (!folders.includes("General")) folders.push("General");
-            save(); renderFolderOptions();
-        }
-    }
-
-    function renderFolderOptions() {
-        const select = document.getElementById('note-folder');
-        select.innerHTML = folders.map(f => `<option value="${f}">${f}</option>`).join('');
     }
 
     function loadNote(id) {
@@ -278,49 +182,44 @@
         const note = notes.find(n => n.id === id);
         renderFolderOptions();
         document.getElementById('note-title').value = note.title;
-        document.getElementById('note-folder').value = note.folder || "General";
-        document.getElementById('editor').innerHTML = note.content || '';
-        document.getElementById('font-family').value = note.font || 'font-dmsans';
-        document.getElementById('font-size').value = note.size || 'size-medium';
-        updateStyleAttr();
-        updateCounts();
+        document.getElementById('note-folder').value = note.folder;
+        document.getElementById('editor').innerHTML = note.content;
+        updateWordCount();
         renderList();
     }
 
     function newNote() {
         const id = Date.now();
-        notes.unshift({ id, title: '', folder: folders[0], content: '', font: 'font-dmsans', size: 'size-medium', updated: id });
+        notes.unshift({ id, title: 'New Entry', folder: folders[0], content: '', updated: id });
         loadNote(id);
     }
 
     function deleteNote() {
-        if (confirm('Delete this note?')) {
+        if (confirm("Permanently delete this entry?")) {
             notes = notes.filter(n => n.id !== currentId);
-            localStorage.setItem('kb_v7_notes', JSON.stringify(notes));
-            if (notes.length > 0) loadNote(notes[0].id); else newNote();
+            if (notes.length) loadNote(notes[0].id); else newNote();
         }
+    }
+
+    function renderFolderOptions() {
+        document.getElementById('note-folder').innerHTML = folders.map(f => `<option value="${f}">${f}</option>`).join('');
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const theme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', theme);
     }
 
     function updateStyleAttr() {
         const font = document.getElementById('font-family').value;
-        const size = document.getElementById('font-size').value;
-        document.getElementById('editor').className = `${font} ${size}`;
+        document.getElementById('editor').style.fontFamily = font === 'font-inter' ? 'Inter' : 'JetBrains Mono';
         save();
     }
 
-    function toggleTheme() {
-        const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', theme);
-        localStorage.setItem('kb_theme', theme);
-    }
-
     document.getElementById('note-title').addEventListener('input', save);
-    document.getElementById('editor').addEventListener('input', save);
-    
-    const savedTheme = localStorage.getItem('kb_theme');
-    if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
     renderFolderOptions();
-    if (notes.length > 0) loadNote(notes[0].id); else newNote();
+    if (notes.length) loadNote(notes[0].id); else newNote();
 </script>
 </body>
 </html>
